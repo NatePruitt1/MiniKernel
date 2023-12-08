@@ -1,0 +1,1 @@
+void kdebug(char* string);
