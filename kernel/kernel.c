@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "mmio.h"
 #include "kdebug.h"
+#include "kuart.h"
 
 static void uart_init() {
   //setup gpio BEFORE uart1 enable
@@ -61,6 +62,9 @@ void kernel_main(uint64_t dtb_ptr32, uint64_t cpu) {
     kdebug("Merry Christmas!\n"); 
     kdebug("Author: Nate Pruitt\n");
     kdebug("Welcome to mini-kernel version 0.01\n");
+
+    kdebug_number(10);
+    kdebug("hello");
   }
 }
 
