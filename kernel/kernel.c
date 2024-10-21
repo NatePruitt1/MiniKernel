@@ -40,31 +40,9 @@ static void uart_init() {
 }
 
 void kernel_main(uint64_t dtb_ptr32, uint64_t cpu) {
-	uart_init();
-
-  if(cpu == 0) {
-    char* christmas[9] = {
-      "          *\n",
-      "         *~*\n",
-      "        *~*o*\n",
-      "       **o*~**\n",
-      "      **~****~*\n",
-      "     **~*~***~**\n",
-      "    *******o*****\n",
-      "   ***o***********\n",
-      "         | |\n"
-    };
-
-    for(int i = 0; i < 9; i++) {
-      kdebug(christmas[i]);
-    }
-
-    kdebug("Merry Christmas!\n"); 
-    kdebug("Author: Nate Pruitt\n");
-    kdebug("Welcome to mini-kernel version 0.01\n");
-
-    kdebug_number(10);
-    kdebug("hello");
+	if(cpu == 0) {
+    uart_init();
   }
+  
 }
 
