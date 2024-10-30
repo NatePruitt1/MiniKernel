@@ -1,47 +1,45 @@
 #include <stddef.h>
 #include <stdint.h>
-#include "mmio.h"
-#include "kdebug.h"
-#include "kuart.h"
+#include "include/mmio.h"
+#include "include/kdebug.h"
+#include "include/kuart.h"
+#include "include/interrupts.h"
+
+void handle_error_interrupt() {
+  kdebug("Error interrupt.\n");
+}
 
 static void uart_init() {
-  //setup gpio BEFORE uart1 enable
-  //we are on 14 and 15
-  //disable push/pull on 14 and 15
-  mmio_write(GPPUD, (uint32_t)0);
-  int i = 0;
-  while(i < 150) i++;
+  uint32_t selector = mmio_read(GPIO_FSEL1);
+  selector &= ~(7 << 12);
+  selector |= 2 << 12;
+  selector &= ~(7 << 15);
+  selector |= 2 << 15;
 
-  uint32_t c = mmio_read(GPPUDCLK0);
-  c |= (1 << 14) | (1 << 15);
-  mmio_write(GPPUDCLK0, c);
-  i = 0;
-  while(i < 150) i++;
-
+  mmio_write(GPIO_FSEL1, selector);
   mmio_write(GPPUD, 0);
-  c = mmio_read(GPPUDCLK0);
-  c &= ~((1<<14) | (1<<15));
+  for(volatile int i = 0; i < 150; i++){}
+  mmio_write(GPPUDCLK0, (1<<14) | (1<<15));
+  for(volatile int i = 0; i < 150; i++){}
+  mmio_write(GPPUDCLK0,0);
+
+  mmio_write(AUX_ENABLES, 1);
+  mmio_write(AUX_MU_CNTL_REG, 0);
+  mmio_write(AUX_INTERRUPT_ENABLE, 0);
+  mmio_write(AUX_LINE_CNTL, 3);
+  mmio_write(AUX_MODEM_CNTL, 0);
+  mmio_write(AUX_BAUD, 270);
   
-  //pins 14 and 15 are push pull disabled
-  //enable their alt5 functions (TX1 and RX1)
-  uint32_t alt5 = 0x2;
-  uint32_t currsel = mmio_read(GPIO_FSEL1);
-  currsel &= ~(0x3F << 12);
-  currsel |= (alt5 << 12) | (alt5 << 15);
-  mmio_write(GPIO_FSEL1, currsel);
-
-  //gpio pins are setup
-  //setup uart1
-  mmio_write(AUX_ENABLES, (uint32_t)0x1);
-  mmio_write(AUX_INTERRUPT_ENABLE, 0x0); //disable interrupts
-  mmio_write(AUX_LINE_CNTL, 0x1);
-  mmio_write(AUX_BAUD, (uint32_t)270);
-
+  mmio_write(AUX_MU_CNTL_REG, 3);
 }
 
 void kernel_main(uint64_t dtb_ptr32, uint64_t cpu) {
 	if(cpu == 0) {
     uart_init();
+    kdebug("Hello!!\n");
+    while(1) {
+      kdebug("H");
+    }
   }
   
 }

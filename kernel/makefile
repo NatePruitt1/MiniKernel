@@ -1,29 +1,30 @@
-CCflags = -Wall -Wextra
+CCflags = -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only
 Optimization = -O2
-Cfiles = kernel.c mmio.c kuart.c kdebug.c
-Bootloader = boot.S
+Cfiles = $(wildcard ./*.c)
+Bootloader = $(wildcard ./*.S)
 Ofiles = $(Cfiles:%.c=%.o)
 BootObj = $(Bootloader:%.S=%.o)
-Outname = natekernel.elf
+Outname = ./out/natekernel.elf
+Img = ./out/kernel8.img
+
+$(Img): $(Outname)
+	aarch64-elf-objcopy $< -O binary $@
 
 $(Outname): $(Ofiles) $(BootObj)
 	aarch64-elf-gcc -T linker.ld -o $(Outname) -ffreestanding $(Optimization) -nostdlib $^ -lgcc
 
 $(Ofiles): $(Cfiles)
-	aarch64-elf-gcc -ffreestanding -c $^ $(Optimization) $(CCflags)
+	aarch64-elf-gcc -c $^ $(Optimization) $(CCflags)
 
 $(BootObj): $(Bootloader)
-	aarch64-elf-as -c $^ -o $@
+	aarch64-elf-gcc -Iinclude -c $^ -o $@
 
 .PHONY: clean
 clean:
 	rm $(Ofiles)
 	rm $(BootObj)
 	rm $(Outname)
-
-.PHONY: run
-run:
-	qemu-system-aarch64 -M raspi3 -serial null -serial stdio -kernel $(Outname)
+	rm $(Img)
 
 .PHONY: open-docs
 open-docs:

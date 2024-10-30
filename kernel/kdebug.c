@@ -1,5 +1,5 @@
-#include "kdebug.h"
-#include "kuart.h"
+#include "include/kdebug.h"
+#include "include/kuart.h"
 #include <stdint.h>
 
 void kdebug(char *string) {
