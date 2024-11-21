@@ -3,17 +3,16 @@
 .section ".text.boot"
 .globl _start
 
-.org 0x80000
-
-_start://at 0x80000 now for kernel start
-  mrs x1, mpidr_el1 //Set x1 to the cpu status system register
-  and x1, x1, #3    //Extract the first 2 bits of this status register
-  cbz x0, el1_entry
-  b halt
+_start:
+  mrs x0, mpidr_el1 //Set x1 to the cpu status system register
+  and x0, x0, #3    //Extract the first 2 bits of this status register
+  
+  cmp x0, #0
+  bne halt
+  
+  b el1_entry
 
 kernel_init:
-    //All of these are needed for it to drop to el1. 
-    //Not sure why.
     ldr	x0, =SCTLR_VALUE_MMU_DISABLED
     msr	sctlr_el1, x0
 
@@ -39,10 +38,12 @@ el1_entry:
     sub w6, w6, #1      //subtract 1 from bss_size
     cbnz w6, 1b         //loop if bss_size > 0
   2:  
-
-
+  
   mov sp, #0x400000   //Set the stack start
-	bl	kernel_main
+	
+  bl uart_init
+
+  bl kernel_main
 
 halt:                   //Protect from crash by busy-looping after main
   mov x1, #0            //prevents compiler removing
@@ -72,44 +73,6 @@ _disable_irq:
 enable_vector_el1:
   adr x0, vector_table
   msr vbar_el1, x0
-
-// -------------------- Vector Table --------------------
-
-vector_table:
-  //ELT table. For when the EL1 sp is the same as the EL0 sp
-  vector_entry error_handler //Synchronous ELt
-  vector_entry error_handler //IRQ
-  vector_entry error_handler //FIQ
-  vector_entry error_handler //SError
-  
-  //ELH table. For when the EL1 sp is different then the EL0 sp
-  vector_entry error_handler //Synchronous ELt
-  vector_entry error_handler //IRQ
-  vector_entry error_handler //FIQ
-  vector_entry error_handler //SError
-  
-  //EL0_64. For when the exception happened in EL0 64 bit mode
-  vector_entry error_handler //Synchronous ELt
-  vector_entry handle_el1_irq //IRQ
-  vector_entry error_handler //FIQ
-  vector_entry error_handler //SError
-  
-  //EL0_32. For when the exception happend in EL0 32 bit mode
-  vector_entry error_handler //Synchronous ELt
-  vector_entry error_handler //IRQ
-  vector_entry error_handler //FIQ
-  vector_entry error_handler //SError
-
-// -------------------- Interrupt Handlers --------------------
-
-handle_el1_irq:
-  enter_handler
-  bl handle_irq
-  exit_handler
-
-error_handler:
-  enter_handler
-  bl handle_error_interrupt
 
 // -------------------- Interrupt Macros --------------------    
 
@@ -159,4 +122,40 @@ ldp	x0, x1, [sp, #16 * 0]
   eret
 .endm
 
+// -------------------- Vector Table --------------------
 
+vector_table:
+  //ELT table. For when the EL1 sp is the same as the EL0 sp
+  vector_entry error_handler //Synchronous ELt
+  vector_entry error_handler //IRQ
+  vector_entry error_handler //FIQ
+  vector_entry error_handler //SError
+  
+  //ELH table. For when the EL1 sp is different then the EL0 sp
+  vector_entry error_handler //Synchronous ELt
+  vector_entry error_handler //IRQ
+  vector_entry error_handler //FIQ
+  vector_entry error_handler //SError
+  
+  //EL0_64. For when the exception happened in EL0 64 bit mode
+  vector_entry error_handler //Synchronous ELt
+  vector_entry handle_el1_irq //IRQ
+  vector_entry error_handler //FIQ
+  vector_entry error_handler //SError
+  
+  //EL0_32. For when the exception happend in EL0 32 bit mode
+  vector_entry error_handler //Synchronous ELt
+  vector_entry error_handler //IRQ
+  vector_entry error_handler //FIQ
+  vector_entry error_handler //SError
+
+// -------------------- Interrupt Handlers --------------------
+
+handle_el1_irq:
+  enter_handler
+  bl handle_irq
+  exit_handler
+
+error_handler:
+  enter_handler
+  bl handle_error_interrupt

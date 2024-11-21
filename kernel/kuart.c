@@ -9,9 +9,9 @@ void uart_init() {
 
   mmio_write(GPIO_FSEL1, selector);
   mmio_write(GPPUD, 0);
-  for(volatile int i = 0; i < 150; i++){}
+  delay(150);
   mmio_write(GPPUDCLK0, (1<<14) | (1<<15));
-  for(volatile int i = 0; i < 150; i++){}
+  delay(150);
   mmio_write(GPPUDCLK0,0);
 
   mmio_write(AUX_ENABLES, 1);
