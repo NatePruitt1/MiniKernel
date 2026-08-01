@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "include/kdebug.h"
 #include "include/interrupts.h"
+#include "include/kuart.h"
 
 void handle_irq() {
   kdebug("Woah interrupt given.\n");
@@ -12,7 +13,9 @@ void handle_error_interrupt() {
 }
 
 void kernel_main() {
-  
+  uart_init();
+  kdebug("Hello, world from MiniKernel!\n");
+
   while(1) {
   }
 }

@@ -1,0 +1,1 @@
+docker run --rm -v $(pwd):/app -w /app kernel-builder make $1

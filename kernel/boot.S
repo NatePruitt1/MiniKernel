@@ -34,7 +34,7 @@ el1_entry:
   ldr w6, =__bss_size   //Set the bss size.
   1:                    //Loop from bss_size to 0
     cbz w6, 2f          //break if bss_size = 0
-    str xzr, [x5], #8   //store 0 in [bss_start], and then increments bss_start reg.
+    strb wzr, [x5], #1  //store 0 in [bss_start], and then increments bss_start reg.
     sub w6, w6, #1      //subtract 1 from bss_size
     cbnz w6, 1b         //loop if bss_size > 0
   2:  
@@ -73,6 +73,7 @@ _disable_irq:
 enable_vector_el1:
   adr x0, vector_table
   msr vbar_el1, x0
+  ret
 
 // -------------------- Interrupt Macros --------------------    
 
@@ -159,3 +160,4 @@ handle_el1_irq:
 error_handler:
   enter_handler
   bl handle_error_interrupt
+  exit_handler

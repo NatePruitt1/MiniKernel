@@ -8,12 +8,12 @@ enum {
   GPIO_BASE = 0x200000,
 
   // Controls actuation of pull up/down to ALL GPIO pins.
-  GPPUD = (GPIO_BASE + 0x94),
+  GPPUD = (MMIO_BASE + GPIO_BASE + 0x94),
 
   // Controls actuation of pull up/down for specific GPIO pin.
-  GPPUDCLK0 = (GPIO_BASE + 0x98),
+  GPPUDCLK0 = (MMIO_BASE + GPIO_BASE + 0x98),
 
-  GPIO_FSEL1 = GPIO_BASE + 0x4,
+  GPIO_FSEL1 = MMIO_BASE + GPIO_BASE + 0x4,
 
   // The base address for UART.
   AUX_BASE = MMIO_BASE + GPIO_BASE + 0x15000,
@@ -29,8 +29,19 @@ enum {
   AUX_MU_CNTL_REG = AUX_BASE + 0x60,
   AUX_EXTRA_STAT = AUX_BASE + 0x64,
   AUX_BAUD = AUX_BASE + 0x68,
+
+  // PL011 UART0 (supported by QEMU raspi3 model).
+  UART0_BASE = MMIO_BASE + 0x201000,
+  UART0_DR = UART0_BASE + 0x00,
+  UART0_FR = UART0_BASE + 0x18,
+  UART0_IBRD = UART0_BASE + 0x24,
+  UART0_FBRD = UART0_BASE + 0x28,
+  UART0_LCRH = UART0_BASE + 0x2C,
+  UART0_CR = UART0_BASE + 0x30,
+  UART0_IMSC = UART0_BASE + 0x38,
+  UART0_ICR = UART0_BASE + 0x44,
 };
 
-void mmio_write(uint32_t reg, uint32_t data);
-uint32_t mmio_read(uint32_t reg);
+extern void mmio_write(uint32_t reg, uint32_t data);
+extern uint32_t mmio_read(uint32_t reg);
 #endif
