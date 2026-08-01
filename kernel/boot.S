@@ -1,4 +1,5 @@
 #include "include/sysreg.h"
+#include "include/interrupts.h"
 
 .section ".text.boot"
 .globl _start
@@ -9,25 +10,45 @@ _start:
   
   cmp x0, #0
   bne halt
-  
-  b el1_entry
+
+  mov x0, xzr
+  msr cntvoff_el2, x0
+  isb
+
+  mrs x0, cnthctl_el2
+  orr x0, x0, #0x3
+  msr cnthctl_el2, x0
+  isb
+
+  mrs x0, cntfrq_el0   // Get timer frequency (ticks per second)
+  mov x1, #100         // Aim for 100Hz (10ms interval)
+  udiv x0, x0, x1      // Ticks per interval
+  mrs x1, cntvct_el0   // Read current virtual counter
+  add x1, x1, x0       // Calculate next deadline
+  msr cntv_cval_el0, x1 // Set compare value
+
+  mov x0, #1           // Bit 0 = Enable, Bit 1 = IMASK (0 means unmasked)
+  msr cntv_ctl_el0, x0
+  isb
+
+  ldr x0, =CORE0_TIMER_IRQCNTL   // Core 0 Timer Interrupt Control Register
+  ldr w1, [x0]
+  orr w1, w1, #8        // Set bit 3 to enable Virtual Timer IRQ routing
+  str w1, [x0]
 
 kernel_init:
-    ldr	x0, =SCTLR_VALUE_MMU_DISABLED
-    msr	sctlr_el1, x0
+  ldr	x0, =SCTLR_VALUE_MMU_DISABLED
+  msr	sctlr_el1, x0
 
-    ldr	x0, =HCR_VALUE
-	  msr	hcr_el2, x0
+  ldr	x0, =HCR_VALUE
+  msr	hcr_el2, x0
 
-	  ldr	x0, =SCR_VALUE
-	  msr	scr_el3, x0
-
-	  ldr	x0, =SPSR_VALUE
-	  msr	spsr_el3, x0
-   
-    adr x0, el1_entry
-    msr elr_el3, x0
-    eret
+  ldr	x0, =SPSR_VALUE
+  msr	spsr_el2, x0
+  
+  adr x0, el1_entry
+  msr elr_el2, x0
+  eret
 
 el1_entry:
 	ldr x5, =__bss_start  //Set the bss start
@@ -52,7 +73,6 @@ halt_inner:             //infinite loop
   b halt_inner          //infinite loop
 
 // --------------------  Utilities  --------------------
-
 .globl get_el
 get_el:
   mrs x0, CurrentEL
@@ -134,13 +154,13 @@ vector_table:
   
   //ELH table. For when the EL1 sp is different then the EL0 sp
   vector_entry error_handler //Synchronous ELt
-  vector_entry error_handler //IRQ
+  vector_entry handle_el1_irq //IRQ
   vector_entry error_handler //FIQ
   vector_entry error_handler //SError
   
   //EL0_64. For when the exception happened in EL0 64 bit mode
   vector_entry error_handler //Synchronous ELt
-  vector_entry handle_el1_irq //IRQ
+  vector_entry error_handler //IRQ
   vector_entry error_handler //FIQ
   vector_entry error_handler //SError
   
